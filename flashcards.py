@@ -23,6 +23,7 @@ class mainWindow(QMainWindow):
         self.currentDirectory = f'{os.path.expanduser("~")}/Documents/'
         #Create layout
         self._setTitle()
+        self._createMenu()
         self.generalLayout = QHBoxLayout()
         centralWidget = QWidget(self)
         centralWidget.setLayout(self.generalLayout)
@@ -46,8 +47,12 @@ class mainWindow(QMainWindow):
         self.setsIO.addWidget(self.openDirectory)
         self.setsIO.addWidget(self.newSet)
         self.setsLayout.addLayout(self.setsIO)
-        self.addCard = QPushButton('Add Card')
-        self.setsLayout.addWidget(self.addCard)
+        self.selectionIO = QHBoxLayout()
+        self.selectAll = QPushButton('Select All')
+        self.deselectAll = QPushButton('Deselect All')
+        self.selectionIO.addWidget(self.selectAll)
+        self.selectionIO.addWidget(self.deselectAll)
+        self.setsLayout.addLayout(self.selectionIO)
         self.generalLayout.addLayout(self.setsLayout)
     
     def _gameArea(self):
@@ -75,6 +80,11 @@ class mainWindow(QMainWindow):
         self.displayList = QListWidget()
         self.generalLayout.addWidget(self.displayList)
     
+    def _createMenu(self):
+        menu = self.menuBar().addMenu('&Menu')
+        menu.addAction('&Exit', self.close, shortcut='Alt+F4')
+        menu.addAction('&Information', self._helpPopUp, shortcut='Ctrl+H')
+    
     def _getVersion(self):
         with open('helptext.txt','r') as f:
             lines = f.readlines()
@@ -83,11 +93,97 @@ class mainWindow(QMainWindow):
                 return line.split('Version - ')[-1].strip('\n')
     
     def _setTitle(self):
-        VERSION_STRING = self._getVersion()
-        self.setWindowTitle(f'Activity Logger {VERSION_STRING}')
+        self.setWindowTitle(f'Flash Cards {self._getVersion()}')
+    
+    def _loadFile(fileName: str) -> dict:
+        with open(fileName,'r') as f:
+            items = json.loads(f.read())
+        return items
+    
+    def _openSet(self, fileName: str | None = None):
+        refresh = False
+        if fileName is not None:
+            fileName = QFileDialog.getOpenFileName(self,'',self.currentDirectory)[0]
+            refresh = True
+        if not fileName=='':
+            self.currentDirectory = fileName[:-len(fileName.split('/')[-1])]
+            try:
+                setData = self._loadFile(fileName)
+                self.sets.update({fileName.split('/')[-1].split('.flashcard')[0]: setData})
+            except:
+                pass
+        if refresh:
+            self._displaySets()
+    
+    def _displaySets(self):
+        previousSelected = [selected.text() for selected in self.setsList.selectedItems()]
+        self.setsList.clear()
+        for itr, key in enumerate(sorted(self.sets.keys())):
+            self.setsList.addItem(key)
+            if key in previousSelected:
+                self.setsList.setCurrentRow(itr)
+    
+    def _openDirectory(self):
+        self.currentDirectory = QFileDialog.getExistingDirectory(self,'',self.currentDirectory)
+        files = glob.glob(f'{self.currentDirectory}/**/*.flashcard')
+        for fileName in files:
+            self._openSet(fileName)
+        self._displaySets()
+    
+    def _newSet(self):
+        self.setWindow = setBuilder(self)
+        self.setWindow.setWindowTitle('New Set')
+        self.setWindow.setWindowModality(Qt.ApplicationModal)
+        self.setWindow.show()
+    
+    def _start(self):
+        return
     
     def _submit(self):
         return
+    
+    def _helpPopUp(self):
+        self.hWindow = helpWindow()
+        self.hWindow.setWindowTitle(f'Activity Logger {self._getVersion()} - Information')
+        self.hWindow.show()
+
+class helpWindow(QWidget):
+    '''General information called by Help menu'''
+    def __init__(self):
+        super().__init__()
+        layout = QVBoxLayout()
+        helpText = self._helpText()
+        for line in helpText:
+            label = QLabel(line)
+            label.setOpenExternalLinks(True)
+            layout.addWidget(label)
+        self.closeButton = QPushButton('OK')
+        layout.addWidget(self.closeButton)
+        self.setLayout(layout)
+        self.closeButton.clicked.connect(self.close)
+    
+    def _helpText(self):
+        with open('helptext.txt','r') as f:
+            lines = f.readlines()
+        return lines
+
+class setBuilder(QWidget):
+    '''Set builder window'''
+    def __init__(self,parent):
+        super().__init__()
+        self.parent = parent
+        layout = QVBoxLayout()
+        self.fileLayout = QHBoxLayout()
+        self.fileField = QLineEdit()
+        self.fileDialog = QPushButton('Select File')
+        self.fileLayout.addWidget(self.fileField)
+        self.fileLayout.addWidget(self.fileDialog)
+        layout.addLayout(self.fileLayout)
+        self.fieldForm = QScrollArea(self)
+        layout.addWidget(self.fieldForm)
+        self.addCard = QPushButton('Add Card')
+        layout.addWidget(self.addCard)
+        self.setLayout(layout)
 
 #Run loop
 class controller:
@@ -98,6 +194,12 @@ class controller:
         self._connectSignalsAndSlots()
     
     def _connectSignalsAndSlots(self):
+        self._view.openSet.clicked.connect(self._view._openSet)
+        self._view.openDirectory.clicked.connect(self._view._openDirectory)
+        self._view.newSet.clicked.connect(self._view._newSet)
+        self._view.selectAll.clicked.connect(self._view.setsList.selectAll)
+        self._view.deselectAll.clicked.connect(self._view.setsList.clearSelection)
+        self._view.startButton.clicked.connect(self._view._start)
         self._view.answerField.returnPressed.connect(self._view._submit)
         self._view.answerButton.clicked.connect(self._view._submit)
 
