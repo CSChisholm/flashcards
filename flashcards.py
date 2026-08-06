@@ -192,10 +192,14 @@ class setBuilder(QWidget):
         layout.addLayout(self.ioLayout)
         self.setLayout(layout)
         self.fileDialog.clicked.connect(self._fileDialog)
+        self.addCard.clicked.connect(self._addCard)
         self.cancelButton.clicked.connect(self.close)
         self.confirmButton.clicked.connect(self._confirm)
     
     def _fileDialog(self):
+        return
+    
+    def _addCard(self):
         return
     
     def _confirm(self):
