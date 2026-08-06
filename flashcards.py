@@ -175,6 +175,7 @@ class setBuilder(QWidget):
         layout = QVBoxLayout()
         self.fileLayout = QHBoxLayout()
         self.fileField = QLineEdit()
+        self.fileName = None
         self.fileDialog = QPushButton('Select File')
         self.fileLayout.addWidget(self.fileField)
         self.fileLayout.addWidget(self.fileDialog)
@@ -183,7 +184,22 @@ class setBuilder(QWidget):
         layout.addWidget(self.fieldForm)
         self.addCard = QPushButton('Add Card')
         layout.addWidget(self.addCard)
+        self.ioLayout = QHBoxLayout()
+        self.cancelButton = QPushButton('Cancel')
+        self.confirmButton = QPushButton('Confirm')
+        self.ioLayout.addWidget(self.cancelButton)
+        self.ioLayout.addWidget(self.confirmButton)
+        layout.addLayout(self.ioLayout)
         self.setLayout(layout)
+        self.fileDialog.clicked.connect(self._fileDialog)
+        self.cancelButton.clicked.connect(self.close)
+        self.confirmButton.clicked.connect(self._confirm)
+    
+    def _fileDialog(self):
+        return
+    
+    def _confirm(self):
+        return
 
 #Run loop
 class controller:
