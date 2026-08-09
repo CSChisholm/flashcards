@@ -10,6 +10,7 @@ import json
 import os
 import glob
 import sys
+import copy
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget, QLineEdit, QPushButton, QHBoxLayout, QListWidget, QVBoxLayout, QLabel, QGridLayout, QScrollArea, QComboBox, QFileDialog, QDialog, QAbstractItemView
 
@@ -42,10 +43,10 @@ class mainWindow(QMainWindow):
         self.setsIO = QHBoxLayout()
         self.openSet = QPushButton('Open Set')
         self.openDirectory = QPushButton('Open Directory')
-        self.newSet = QPushButton('New Set')
+        self.buildSet = QPushButton('Build Set')
         self.setsIO.addWidget(self.openSet)
         self.setsIO.addWidget(self.openDirectory)
-        self.setsIO.addWidget(self.newSet)
+        self.setsIO.addWidget(self.buildSet)
         self.setsLayout.addLayout(self.setsIO)
         self.selectionIO = QHBoxLayout()
         self.selectAll = QPushButton('Select All')
@@ -95,23 +96,23 @@ class mainWindow(QMainWindow):
     def _setTitle(self):
         self.setWindowTitle(f'Flash Cards {self._getVersion()}')
     
-    def _loadFile(fileName: str) -> dict:
+    def _loadFile(self, fileName: str):
         with open(fileName,'r') as f:
-            items = json.loads(f.read())
-        return items
+            setData = json.loads(f.read())
+        self.sets.update({self._file2key(fileName):
+                          {'pairs': setData, 'fileName': fileName}})
     
     def _openSet(self, fileName: str | None = None):
         refresh = False
-        if fileName is not None:
+        if fileName is None:
             fileName = QFileDialog.getOpenFileName(self,'',self.currentDirectory)[0]
             refresh = True
-        if not fileName=='':
-            self.currentDirectory = fileName[:-len(fileName.split('/')[-1])]
-            try:
-                setData = self._loadFile(fileName)
-                self.sets.update({fileName.split('/')[-1].split('.flashcard')[0]: setData})
-            except:
-                pass
+            if not fileName=='':
+                self.currentDirectory = fileName[:-len(fileName.split('/')[-1])]
+        try:
+            self._loadFile(fileName)
+        except:
+            pass
         if refresh:
             self._displaySets()
     
@@ -130,9 +131,14 @@ class mainWindow(QMainWindow):
             self._openSet(fileName)
         self._displaySets()
     
-    def _newSet(self):
+    def _file2key(self, fileName: str) -> str:
+        '''Returns a unique key form a file name'''
+        baseRemoved = fileName.split(f'{os.path.expanduser("~")}/Documents/')[1]
+        return baseRemoved.replace('/','>').split('.flashcard')[0]
+    
+    def _buildSet(self):
         self.setWindow = setBuilder(self)
-        self.setWindow.setWindowTitle('New Set')
+        self.setWindow.setWindowTitle('Set Builder')
         self.setWindow.setWindowModality(Qt.ApplicationModal)
         self.setWindow.show()
     
@@ -172,16 +178,19 @@ class setBuilder(QWidget):
     def __init__(self,parent):
         super().__init__()
         self.parent = parent
+        self.tempSets = copy.deepcopy(self.parent.sets)
         layout = QVBoxLayout()
         self.fileLayout = QHBoxLayout()
-        self.fileField = QLineEdit()
+        self.fileField = QComboBox()
+        self.fileField.addItems(list(self.parent.sets.keys()))
         self.fileName = None
-        self.fileDialog = QPushButton('Select File')
+        self.fileDialog = QPushButton('New Set')
         self.fileLayout.addWidget(self.fileField)
         self.fileLayout.addWidget(self.fileDialog)
         layout.addLayout(self.fileLayout)
         self.fieldForm = QScrollArea(self)
         layout.addWidget(self.fieldForm)
+        self._displayPairs()
         self.addCard = QPushButton('Add Card')
         layout.addWidget(self.addCard)
         self.ioLayout = QHBoxLayout()
@@ -191,19 +200,66 @@ class setBuilder(QWidget):
         self.ioLayout.addWidget(self.confirmButton)
         layout.addLayout(self.ioLayout)
         self.setLayout(layout)
+        self.fileField.currentIndexChanged.connect(self._displayPairs)
         self.fileDialog.clicked.connect(self._fileDialog)
         self.addCard.clicked.connect(self._addCard)
         self.cancelButton.clicked.connect(self.close)
         self.confirmButton.clicked.connect(self._confirm)
     
     def _fileDialog(self):
+        fileName = QFileDialog.getSaveFileName(self,'',self.parent.currentDirectory)[0]
+        self._openSet(fileName)
+    
+    def _newSet(self, fileName: str):
+        if not os.path.exists(fileName):
+            if not fileName.split('.')[-1]=='flashcard':
+                fileName+='.flashcard'
+            self.parent.currentDirectory = fileName[:-len(fileName.split('/')[-1])]
+            self.tempSets.update({self.parent._file2key(fileName): {'pairs': {}, 'fileName': fileName}})
+            self.fileField.addItem(self.parent._file2key(fileName))
+        self.fileField.setCurrentText(self.parent._file2key(fileName))
+        self._displayPairs()
+    
+    def _displayPairs(self):
         return
     
     def _addCard(self):
-        return
+        self.cardWindow = cardAdder(self)
+        self.cardWindow.setWindowTitle('Add Card')
+        self.cardWindow.setWindowModality(Qt.ApplicationModal)
+        self.cardWindow.show()
     
     def _confirm(self):
-        return
+        self.parent.sets = copy(self.tempSets).deepcopy()
+        self.parent._displaySets()
+        self.close()
+
+class cardAdder(QWidget):
+    '''Card adder window'''
+    def __init__(self,parent):
+        super().__init__()
+        self.parent = parent
+        layout = QGridLayout()
+        layout.addWidget(QLabel('A'),0,0)
+        layout.addWidget(QLabel('B'),0,1)
+        self.aField = QLineEdit()
+        layout.addWidget(self.aField,1,0)
+        self.bField = QLineEdit()
+        layout.addWidget(self.bField,1,1)
+        self.cancelButton = QPushButton('Cancel')
+        self.confirmButton = QPushButton('Confirm')
+        layout.addWidget(self.cancelButton,2,0)
+        layout.addWidget(self.confirmButton,2,1)
+        self.setLayout(layout)
+        self.cancelButton.clicked.connect(self.close)
+        self.confirmButton.clicked.connect(self._confirm)
+    
+    def _confirm(self):
+        aText = self.aField.text()
+        bText = self.bField.text()
+        currentSet = self.parent.fileField.currentText()
+        self.parent.tempSets[currentSet]['pairs'].update({aText: bText})
+        self.close()
 
 #Run loop
 class controller:
@@ -216,7 +272,7 @@ class controller:
     def _connectSignalsAndSlots(self):
         self._view.openSet.clicked.connect(self._view._openSet)
         self._view.openDirectory.clicked.connect(self._view._openDirectory)
-        self._view.newSet.clicked.connect(self._view._newSet)
+        self._view.buildSet.clicked.connect(self._view._buildSet)
         self._view.selectAll.clicked.connect(self._view.setsList.selectAll)
         self._view.deselectAll.clicked.connect(self._view.setsList.clearSelection)
         self._view.startButton.clicked.connect(self._view._start)
