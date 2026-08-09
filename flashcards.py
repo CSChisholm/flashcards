@@ -188,8 +188,8 @@ class setBuilder(QWidget):
         self.fileLayout.addWidget(self.fileField)
         self.fileLayout.addWidget(self.fileDialog)
         layout.addLayout(self.fileLayout)
-        self.fieldForm = QScrollArea(self)
-        layout.addWidget(self.fieldForm)
+        self.fieldFormScroll = QScrollArea(self)
+        layout.addWidget(self.fieldFormScroll)
         self._displayPairs()
         self.addCard = QPushButton('Add Card')
         layout.addWidget(self.addCard)
@@ -208,7 +208,7 @@ class setBuilder(QWidget):
     
     def _fileDialog(self):
         fileName = QFileDialog.getSaveFileName(self,'',self.parent.currentDirectory)[0]
-        self._openSet(fileName)
+        self._newSet(fileName)
     
     def _newSet(self, fileName: str):
         if not os.path.exists(fileName):
@@ -221,9 +221,29 @@ class setBuilder(QWidget):
         self._displayPairs()
     
     def _displayPairs(self):
-        return
+        fieldFormScrollContents = QWidget()
+        self.fieldForm = QGridLayout(fieldFormScrollContents)
+        self.currentSet = self.fileField.currentText()
+        if not self.currentSet=='':
+            self.editBoxes = []
+            for row, (a, b) in enumerate(self.tempSets[self.currentSet]['pairs'].items()):
+                self.editBoxes.append([QLineEdit(a), QLineEdit(b)])
+                self.fieldForm.addWidget(self.editBoxes[row][1],row,0)
+                self.fieldForm.addWidget(self.editBoxes[row][1],row,1)
+                for editBox in self.editBoxes[-1]:
+                    editBox.textChanged.connect(self._updateSet)
+        self.fieldFormScroll.setWidget(fieldFormScrollContents)
+    
+    def _updateSet(self):
+        self.tempSets[self.currentSet]['pairs'] = {}
+        for (aBox, bBox) in self.editBoxes:
+            self.tempSets['pairs'].update({aBox.text(): bBox.text()})
     
     def _addCard(self):
+        self.tempSets[self.currentSet].update({'a': 'b'})
+        self._displayPairs()
+    
+    def _addCardAlt(self):
         self.cardWindow = cardAdder(self)
         self.cardWindow.setWindowTitle('Add Card')
         self.cardWindow.setWindowModality(Qt.ApplicationModal)
@@ -231,6 +251,7 @@ class setBuilder(QWidget):
     
     def _confirm(self):
         self.parent.sets = copy(self.tempSets).deepcopy()
+        #TODO: Remove empty strings and save to file
         self.parent._displaySets()
         self.close()
 
