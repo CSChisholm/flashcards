@@ -11,6 +11,7 @@ import os
 import glob
 import sys
 import copy
+from PyQt5 import QtCore
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget, QLineEdit, QPushButton, QHBoxLayout, QListWidget, QVBoxLayout, QLabel, QGridLayout, QScrollArea, QComboBox, QFileDialog, QDialog, QAbstractItemView
 
@@ -102,6 +103,7 @@ class mainWindow(QMainWindow):
         self.sets.update({self._file2key(fileName):
                           {'pairs': setData, 'fileName': fileName}})
     
+    @QtCore.pyqtSlot()
     def _openSet(self, fileName: str | None = None):
         refresh = False
         if fileName is None:
