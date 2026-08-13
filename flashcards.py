@@ -243,12 +243,6 @@ class setBuilder(QWidget):
         self.tempSets[self.currentSet]['pairs'].update({'a': 'b'})
         self._displayPairs()
     
-    def _addCardAlt(self):
-        self.cardWindow = cardAdder(self)
-        self.cardWindow.setWindowTitle('Add Card')
-        self.cardWindow.setWindowModality(Qt.ApplicationModal)
-        self.cardWindow.show()
-    
     def _confirm(self):
         for saveSet in self.tempSets.values():
             for key in saveSet.keys():
