@@ -127,7 +127,6 @@ class mainWindow(QMainWindow):
     def _openDirectory(self):
         self.currentDirectory = QFileDialog.getExistingDirectory(self,'',self.currentDirectory)
         files = glob.glob(f'{self.currentDirectory}/**/*.flashcard',recursive=True)
-        print(files)
         for fileName in files:
             self._openSet(fileName)
         self._displaySets()
@@ -259,33 +258,6 @@ class setBuilder(QWidget):
                     f.write(json.dumps(saveSet['pairs']))
         self.parent.sets = copy.deepcopy(self.tempSets)
         self.parent._displaySets()
-        self.close()
-
-class cardAdder(QWidget):
-    '''Card adder window'''
-    def __init__(self,parent):
-        super().__init__()
-        self.parent = parent
-        layout = QGridLayout()
-        layout.addWidget(QLabel('A'),0,0)
-        layout.addWidget(QLabel('B'),0,1)
-        self.aField = QLineEdit()
-        layout.addWidget(self.aField,1,0)
-        self.bField = QLineEdit()
-        layout.addWidget(self.bField,1,1)
-        self.cancelButton = QPushButton('Cancel')
-        self.confirmButton = QPushButton('Confirm')
-        layout.addWidget(self.cancelButton,2,0)
-        layout.addWidget(self.confirmButton,2,1)
-        self.setLayout(layout)
-        self.cancelButton.clicked.connect(self.close)
-        self.confirmButton.clicked.connect(self._confirm)
-    
-    def _confirm(self):
-        aText = self.aField.text()
-        bText = self.bField.text()
-        currentSet = self.parent.fileField.currentText()
-        self.parent.tempSets[currentSet]['pairs'].update({aText: bText})
         self.close()
 
 #Run loop
