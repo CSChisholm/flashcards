@@ -215,7 +215,7 @@ class setBuilder(QWidget):
             if not fileName.split('.')[-1]=='flashcard':
                 fileName+='.flashcard'
             self.parent.currentDirectory = fileName[:-len(fileName.split('/')[-1])]
-            self.tempSets.update({self.parent._file2key(fileName): {'pairs': {}, 'fileName': fileName}})
+            self.tempSets.update({self.parent._file2key(fileName): {'pairs': {'a': 'b'}, 'fileName': fileName}})
             self.fileField.addItem(self.parent._file2key(fileName))
         self.fileField.setCurrentText(self.parent._file2key(fileName))
         self._displayPairs()
@@ -228,7 +228,7 @@ class setBuilder(QWidget):
             self.editBoxes = []
             for row, (a, b) in enumerate(self.tempSets[self.currentSet]['pairs'].items()):
                 self.editBoxes.append([QLineEdit(a), QLineEdit(b)])
-                self.fieldForm.addWidget(self.editBoxes[row][1],row,0)
+                self.fieldForm.addWidget(self.editBoxes[row][0],row,0)
                 self.fieldForm.addWidget(self.editBoxes[row][1],row,1)
                 for editBox in self.editBoxes[-1]:
                     editBox.textChanged.connect(self._updateSet)
@@ -237,10 +237,10 @@ class setBuilder(QWidget):
     def _updateSet(self):
         self.tempSets[self.currentSet]['pairs'] = {}
         for (aBox, bBox) in self.editBoxes:
-            self.tempSets['pairs'].update({aBox.text(): bBox.text()})
+            self.tempSets[self.currentSet]['pairs'].update({aBox.text(): bBox.text()})
     
     def _addCard(self):
-        self.tempSets[self.currentSet].update({'a': 'b'})
+        self.tempSets[self.currentSet]['pairs'].update({'a': 'b'})
         self._displayPairs()
     
     def _addCardAlt(self):
@@ -250,7 +250,7 @@ class setBuilder(QWidget):
         self.cardWindow.show()
     
     def _confirm(self):
-        self.parent.sets = copy(self.tempSets).deepcopy()
+        self.parent.sets = copy.deepcopy(self.tempSets)
         #TODO: Remove empty strings and save to file
         self.parent._displaySets()
         self.close()
