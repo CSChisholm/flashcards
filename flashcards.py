@@ -126,7 +126,8 @@ class mainWindow(QMainWindow):
     
     def _openDirectory(self):
         self.currentDirectory = QFileDialog.getExistingDirectory(self,'',self.currentDirectory)
-        files = glob.glob(f'{self.currentDirectory}/**/*.flashcard')
+        files = glob.glob(f'{self.currentDirectory}/**/*.flashcard',recursive=True)
+        print(files)
         for fileName in files:
             self._openSet(fileName)
         self._displaySets()
@@ -250,8 +251,13 @@ class setBuilder(QWidget):
         self.cardWindow.show()
     
     def _confirm(self):
+        for saveSet in self.tempSets.values():
+            for key in saveSet.keys():
+                if '' in [key, saveSet[key]]:
+                    saveSet.pop(key)
+                with open(saveSet['fileName'],'w') as f:
+                    f.write(json.dumps(saveSet['pairs']))
         self.parent.sets = copy.deepcopy(self.tempSets)
-        #TODO: Remove empty strings and save to file
         self.parent._displaySets()
         self.close()
 
