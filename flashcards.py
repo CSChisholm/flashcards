@@ -11,6 +11,7 @@ import os
 import glob
 import sys
 import copy
+import random
 from PyQt5 import QtCore
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget, QLineEdit, QPushButton, QHBoxLayout, QListWidget, QVBoxLayout, QLabel, QGridLayout, QScrollArea, QComboBox, QFileDialog, QDialog, QAbstractItemView
@@ -145,7 +146,36 @@ class mainWindow(QMainWindow):
         self.setWindow.show()
     
     def _start(self):
-        return
+        '''Method to start the flash card round'''
+        if len(self.setsList.selectedItems()):
+            self.displayList.clear()
+            gamePairs = {}
+            for selected in self.setsList.selectedItems():
+                gamePairs.update(self.sets[selected.text()]['pairs'])
+            #Shuffle cards
+            gameKeys = list(gamePairs.keys())
+            random.shuffle(gameKeys)
+            gamePairs = {key: gamePairs[key] for key in gameKeys}
+            #Present prompts according to game mode
+            gameMode = self.gameMode.currentText
+            if gameMode=='B side':
+                gamePairs = {val: key for key, val in gamePairs.items()}
+            elif gameMode=='Random':
+                aList = list(gamePairs.keys())
+                bList = list(gamePairs.values())
+                gamePairs = {}
+                for a, b in zip(aList, bList):
+                    num = random.random()
+                    if num < 0.5:
+                        gamePairs.update({a: b})
+                    else:
+                        gamePairs.update({b: a})
+            self.aList = list(gamePairs.keys())
+            self.bList = list(gamePairs.values())
+            self.attempts = 0
+            self.gameCard.setText(self.aList[0])
+        else:
+            return #TODO: warn user to select one or more sets.
     
     def _submit(self):
         return
