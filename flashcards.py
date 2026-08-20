@@ -28,6 +28,8 @@ class mainWindow(QMainWindow):
         self.charMods = {'`': u'\u0300', "'": u'\u0301', '^': u'\u0302',
                          '~': u'\u0303', '-': u'\u0304', '⌄': u'\u0306',
                          '.': u'\u0307', '"': u'\u0308'}
+        self.hintAttempts = 3
+        self.passAttempts = 5
         self.sets = {}
         #Set default directory
         self.currentDirectory = f'{os.path.expanduser("~")}/Documents/'
@@ -103,8 +105,9 @@ class mainWindow(QMainWindow):
     
     def _createMenu(self):
         menu = self.menuBar().addMenu('&Menu')
-        menu.addAction('&Exit', self.close, shortcut='Alt+F4')
+        menu.addAction('&Settings', self._settingsPopUp, shortcut='Ctrl+D')
         menu.addAction('&Information', self._helpPopUp, shortcut='Ctrl+H')
+        menu.addAction('&Exit', self.close, shortcut='Alt+F4')
     
     def _getVersion(self):
         with open('helptext.txt','r') as f:
@@ -206,11 +209,11 @@ class mainWindow(QMainWindow):
                 self._nextItem()
             else:
                 self.setsTitle.setText(f'Sets{" "*90}Attempts: {self.attempts}')
-                if self.attempts==3:
-                    self.gameCard.setText(f'{self.aList[0]}\n{self.bList[0][0]}')
-                elif self.attempts==5:
+                if self.attempts==self.passAttempts:
                     self.displayList.addItem(u'\u2717' + f'{self.aList[0]} : {self.bList[0]} ')
                     self._nextItem()
+                elif self.attempts==self.hintAttempts:
+                    self.gameCard.setText(f'{self.aList[0]}\n{self.bList[0][0]}')
                     
     def _nextItem(self):
         '''Progress through the flash card round'''
@@ -228,6 +231,11 @@ class mainWindow(QMainWindow):
         char = self.letterBox.currentText() + self.charMods[self.modifierBox.currentText()]
         self.answerField.setText(self.answerField.text() + char)
     
+    def _settingsPopUp(self):
+        self.sWindow = settingsWindow(self)
+        self.sWindow.setWindowTitle(f'Flash Cards {self._getVersion()} - Settings')
+        self.sWindow.show()
+    
     def _helpPopUp(self):
         self.hWindow = helpWindow()
         self.hWindow.setWindowTitle(f'Flash Cards {self._getVersion()} - Information')
@@ -237,6 +245,44 @@ class mainWindow(QMainWindow):
         self.wWindow = setSelectWarnWindow()
         self.wWindow.setWindowTitle(f'Flash Cards {self._getVersion()} - Warning')
         self.wWindow.show()
+
+class settingsWindow(QWidget):
+    '''Window for adjusting settings'''
+    def __init__(self,parent):
+        super().__init__()
+        self.parent = parent
+        layout = QVBoxLayout()
+        gridLayout = QGridLayout()
+        self.label1 = QLabel('Number of attempts before a hint is given:')
+        self.label2 = QLabel('Number of attempts before moving on:')
+        self.hintSelector = QComboBox()
+        selectorList = ['Infinite']+[f'{x}' for x in range(1,100)]
+        self.hintSelector.addItems(selectorList)
+        self.hintSelector.setCurrentText(f'{self.parent.hintAttempts if self.parent.hintAttempts>0 else "Infinite"}')
+        self.passSelector = QComboBox()
+        self.passSelector.addItems(selectorList)
+        self.passSelector.setCurrentText(f'{self.parent.passAttempts if self.parent.passAttempts>0 else "Infinite"}')
+        self.cancelButton = QPushButton('Cancel')
+        self.confirmButton = QPushButton('Confirm')
+        gridLayout.addWidget(self.label1,1,1)
+        gridLayout.addWidget(self.hintSelector,1,2)
+        gridLayout.addWidget(self.label2,2,1)
+        gridLayout.addWidget(self.passSelector,2,2)
+        layout.addLayout(gridLayout)
+        buttonLayout = QHBoxLayout()
+        buttonLayout.addWidget(self.cancelButton)
+        buttonLayout.addWidget(self.confirmButton)
+        layout.addLayout(buttonLayout)
+        self.setLayout(layout)
+        self.cancelButton.clicked.connect(self.close)
+        self.confirmButton.clicked.connect(self._confirm)
+    
+    def _confirm(self):
+        hintSelection = self.hintSelector.currentText()
+        self.parent.hintAttempts = -1 if hintSelection=='Infinite' else int(hintSelection)
+        passSelection = self.passSelector.currentText()
+        self.parent.passAttempts = -1 if passSelection=='Infinite' else int(passSelection)
+        self.close()
 
 class helpWindow(QWidget):
     '''General information called by Help menu'''
