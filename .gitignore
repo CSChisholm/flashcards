@@ -1,2 +1,3 @@
 *.flashcard
 testing/*
+venv/*
