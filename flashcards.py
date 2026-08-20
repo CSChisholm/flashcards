@@ -171,7 +171,7 @@ class mainWindow(QMainWindow):
             random.shuffle(gameKeys)
             gamePairs = {key: gamePairs[key] for key in gameKeys}
             #Present prompts according to game mode
-            gameMode = self.gameMode.currentText
+            gameMode = self.gameMode.currentText()
             if gameMode=='B side':
                 gamePairs = {val: key for key, val in gamePairs.items()}
             elif gameMode=='Random':
