@@ -199,11 +199,12 @@ class mainWindow(QMainWindow):
         '''Method for checking answer and proceeding'''
         if len(self.aList):
             answer = self.answerField.text()
+            self.attempts+=1
             if answer.lower()==self.bList[0].lower(): #Success
-                self.displayList.addItem(u'\u2713' + f'{self.aList[0]} : {self.bList[0]} ')
+                attemptStr = f'({self.attempts} attempt{"s" if self.attempts>1 else ""})'
+                self.displayList.addItem(u'\u2713' + f'{self.aList[0]} : {self.bList[0]} {attemptStr}')
                 self._nextItem()
             else:
-                self.attempts+=1
                 self.setsTitle.setText(f'Sets{" "*90}Attempts: {self.attempts}')
                 if self.attempts==3:
                     self.gameCard.setText(f'{self.aList[0]}\n{self.bList[0][0]}')
