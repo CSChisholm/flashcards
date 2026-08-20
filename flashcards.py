@@ -14,7 +14,10 @@ import copy
 import random
 from PyQt5 import QtCore
 from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget, QLineEdit, QPushButton, QHBoxLayout, QListWidget, QVBoxLayout, QLabel, QGridLayout, QScrollArea, QComboBox, QFileDialog, QDialog, QAbstractItemView, QTextEdit
+from PyQt5.QtWidgets import (QApplication, QMainWindow, QWidget, QLineEdit,
+                             QPushButton, QHBoxLayout, QListWidget, QVBoxLayout,
+                             QLabel, QGridLayout, QScrollArea, QComboBox, QFileDialog,
+                             QAbstractItemView)
 
 #GUI classes
 class mainWindow(QMainWindow):
@@ -74,6 +77,7 @@ class mainWindow(QMainWindow):
         self.gameCard = QLabel()
         self.gameCard.setStyleSheet('border: 1px solid black;')
         self.gameCard.setScaledContents(True)
+        self.gameCard.setAlignment(QtCore.Qt.AlignCenter)
         self.gameLayout.addWidget(self.gameCard)
         self.entryLayout = QHBoxLayout()
         self.answerField = QLineEdit()
@@ -189,7 +193,7 @@ class mainWindow(QMainWindow):
             self.attempts = 0
             self.gameCard.setText(self.aList[0])
         else:
-            return #TODO: warn user to select one or more sets.
+            self._setSelectWarnPopUp()
     
     def _submit(self):
         return
@@ -200,8 +204,13 @@ class mainWindow(QMainWindow):
     
     def _helpPopUp(self):
         self.hWindow = helpWindow()
-        self.hWindow.setWindowTitle(f'Activity Logger {self._getVersion()} - Information')
+        self.hWindow.setWindowTitle(f'Flash Cards {self._getVersion()} - Information')
         self.hWindow.show()
+    
+    def _setSelectWarnPopUp(self):
+        self.wWindow = setSelectWarnWindow()
+        self.wWindow.setWindowTitle(f'Flash Cards {self._getVersion()} - Warning')
+        self.wWindow.show()
 
 class helpWindow(QWidget):
     '''General information called by Help menu'''
@@ -222,6 +231,18 @@ class helpWindow(QWidget):
         with open('helptext.txt','r') as f:
             lines = f.readlines()
         return lines
+
+class setSelectWarnWindow(QWidget):
+    '''Warn user to select one or more sets'''
+    def __init__(self):
+        super().__init__()
+        layout = QVBoxLayout()
+        warning = QLabel(('Select one or more sets to start!'))
+        layout.addWidget(warning)
+        self.confirmButton = QPushButton('OK')
+        layout.addWidget(self.confirmButton)
+        self.setLayout(layout)
+        self.confirmButton.clicked.connect(self.close)
 
 class setBuilder(QWidget):
     '''Set builder window'''
