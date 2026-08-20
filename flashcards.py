@@ -14,13 +14,17 @@ import copy
 import random
 from PyQt5 import QtCore
 from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget, QLineEdit, QPushButton, QHBoxLayout, QListWidget, QVBoxLayout, QLabel, QGridLayout, QScrollArea, QComboBox, QFileDialog, QDialog, QAbstractItemView
+from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget, QLineEdit, QPushButton, QHBoxLayout, QListWidget, QVBoxLayout, QLabel, QGridLayout, QScrollArea, QComboBox, QFileDialog, QDialog, QAbstractItemView, QTextEdit
 
 #GUI classes
 class mainWindow(QMainWindow):
     '''Main window'''
-    def __init__(self):
+    def __init__(self,clipboard):
         super().__init__()
+        self.clipboard = clipboard
+        self.charMods = {'`': u'\u0300', "'": u'\u0301', '^': u'\u0302',
+                         '~': u'\u0303', '-': u'\u0304', '⌄': u'\u0306',
+                         '.': u'\u0307', '"': u'\u0308'}
         self.sets = {}
         #Set default directory
         self.currentDirectory = f'{os.path.expanduser("~")}/Documents/'
@@ -77,6 +81,16 @@ class mainWindow(QMainWindow):
         self.answerButton = QPushButton('Go')
         self.entryLayout.addWidget(self.answerButton)
         self.gameLayout.addLayout(self.entryLayout)
+        self.modifierLayout = QHBoxLayout()
+        self.letterBox = QComboBox()
+        self.letterBox.addItems([x for x in 'abcdefghijklmnopqrstuvwxyz'])
+        self.modifierLayout.addWidget(self.letterBox)
+        self.modifierBox = QComboBox()
+        self.modifierBox.addItems(list(self.charMods.keys()))
+        self.modifierLayout.addWidget(self.modifierBox)
+        self.insertButton = QPushButton('Insert (Ctrl+I)', shortcut='Ctrl+I')
+        self.modifierLayout.addWidget(self.insertButton)
+        self.gameLayout.addLayout(self.modifierLayout)
         self.generalLayout.addLayout(self.gameLayout)
     
     def _displayList(self):
@@ -180,6 +194,10 @@ class mainWindow(QMainWindow):
     def _submit(self):
         return
     
+    def _insert(self):
+        char = self.letterBox.currentText() + self.charMods[self.modifierBox.currentText()]
+        self.answerField.setText(self.answerField.text() + char)
+    
     def _helpPopUp(self):
         self.hWindow = helpWindow()
         self.hWindow.setWindowTitle(f'Activity Logger {self._getVersion()} - Information')
@@ -231,10 +249,21 @@ class setBuilder(QWidget):
         self.ioLayout.addWidget(self.cancelButton)
         self.ioLayout.addWidget(self.confirmButton)
         layout.addLayout(self.ioLayout)
+        modifierLayout = QHBoxLayout()
+        self.letterBox = QComboBox()
+        self.letterBox.addItems([x for x in 'abcdefghijklmnopqrstuvwxyz'])
+        modifierLayout.addWidget(self.letterBox)
+        self.modifierBox = QComboBox()
+        self.modifierBox.addItems(list(self.parent.charMods.keys()))
+        modifierLayout.addWidget(self.modifierBox)
+        self.copyButton = QPushButton('Copy to clipboard (Ctrl+C)', shortcut='Ctrl+C')
+        modifierLayout.addWidget(self.copyButton)
+        layout.addLayout(modifierLayout)
         self.setLayout(layout)
         self.fileField.currentIndexChanged.connect(self._displayPairs)
         self.fileDialog.clicked.connect(self._fileDialog)
         self.addCard.clicked.connect(self._addCard)
+        self.copyButton.clicked.connect(self._copyChar)
         self.cancelButton.clicked.connect(self.close)
         self.confirmButton.clicked.connect(self._confirm)
     
@@ -275,6 +304,10 @@ class setBuilder(QWidget):
         self.tempSets[self.currentSet]['pairs'].update({'a': 'b'})
         self._displayPairs()
     
+    def _copyChar(self):
+        char = self.letterBox.currentText() + self.parent.charMods[self.modifierBox.currentText()]
+        self.parent.clipboard.setText(char)
+    
     def _confirm(self):
         for saveSet in self.tempSets.values():
             for key in saveSet.keys():
@@ -303,11 +336,13 @@ class controller:
         self._view.startButton.clicked.connect(self._view._start)
         self._view.answerField.returnPressed.connect(self._view._submit)
         self._view.answerButton.clicked.connect(self._view._submit)
+        self._view.insertButton.clicked.connect(self._view._insert)
 
 def main():
     '''Main loop'''
     elApp = QApplication([])
-    elWindow = mainWindow()
+    clipboard = elApp.clipboard()
+    elWindow = mainWindow(clipboard)
     elWindow.show()
     controller(model=None,view=elWindow)
     sys.exit(elApp.exec())
