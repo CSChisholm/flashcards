@@ -44,8 +44,8 @@ class mainWindow(QMainWindow):
         
     def _setsLayout(self):
         self.setsLayout = QVBoxLayout()
-        setsTitle = QLabel('Sets')
-        self.setsLayout.addWidget(setsTitle)
+        self.setsTitle = QLabel('Sets')
+        self.setsLayout.addWidget(self.setsTitle)
         self.setsList = QListWidget()
         self.setsList.setSelectionMode(QAbstractItemView.MultiSelection)
         self.setsLayout.addWidget(self.setsList)
@@ -58,8 +58,8 @@ class mainWindow(QMainWindow):
         self.setsIO.addWidget(self.buildSet)
         self.setsLayout.addLayout(self.setsIO)
         self.selectionIO = QHBoxLayout()
-        self.selectAll = QPushButton('Select All')
-        self.deselectAll = QPushButton('Deselect All')
+        self.selectAll = QPushButton('Select All (Ctrl+A)', shortcut='Ctrl+A')
+        self.deselectAll = QPushButton('Deselect All (Ctrl+Shift+A)', shortcut='Ctrl+Shift+A')
         self.selectionIO.addWidget(self.selectAll)
         self.selectionIO.addWidget(self.deselectAll)
         self.setsLayout.addLayout(self.selectionIO)
@@ -204,6 +204,7 @@ class mainWindow(QMainWindow):
                 self._nextItem()
             else:
                 self.attempts+=1
+                self.setsTitle.setText(f'Sets{" "*90}Attempts: {self.attempts}')
                 if self.attempts==3:
                     self.gameCard.setText(f'{self.aList[0]}\n{self.bList[0][0]}')
                 elif self.attempts==5:
@@ -216,6 +217,7 @@ class mainWindow(QMainWindow):
         self.aList.pop(0)
         self.bList.pop(0)
         self.attempts = 0
+        self.setsTitle.setText('Sets')
         if len(self.aList):
             self.gameCard.setText(self.aList[0])
         else:
