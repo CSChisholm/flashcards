@@ -196,7 +196,30 @@ class mainWindow(QMainWindow):
             self._setSelectWarnPopUp()
     
     def _submit(self):
-        return
+        '''Method for checking answer and proceeding'''
+        if len(self.aList):
+            answer = self.answerField.text()
+            if answer.lower()==self.bList[0].lower(): #Success
+                self.displayList.addItem(u'\u2713' + f'{self.aList[0]} : {self.bList[0]} ')
+                self._nextItem()
+            else:
+                self.attempts+=1
+                if self.attempts==3:
+                    self.gameCard.setText(f'{self.aList[0]}\n{self.bList[0][0]}')
+                elif self.attempts==5:
+                    self.displayList.addItem(u'\u2717' + f'{self.aList[0]} : {self.bList[0]} ')
+                    self._nextItem()
+                    
+    def _nextItem(self):
+        '''Progress through the flash card round'''
+        self.answerField.setText('')
+        self.aList.pop(0)
+        self.bList.pop(0)
+        self.attempts = 0
+        if len(self.aList):
+            self.gameCard.setText(self.aList[0])
+        else:
+            self.gameCard.setText('')
     
     def _insert(self):
         char = self.letterBox.currentText() + self.charMods[self.modifierBox.currentText()]
