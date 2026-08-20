@@ -110,7 +110,9 @@ class mainWindow(QMainWindow):
         menu.addAction('&Exit', self.close, shortcut='Alt+F4')
     
     def _getVersion(self):
-        with open('helptext.txt','r') as f:
+        filePath = os.path.abspath(__file__)
+        fileDirectory = '/'.join(filePath.split('/')[:-1])
+        with open(f'{fileDirectory}/helptext.txt','r') as f:
             lines = f.readlines()
         for line in lines:
             if 'Version - ' in line:
@@ -300,7 +302,9 @@ class helpWindow(QWidget):
         self.closeButton.clicked.connect(self.close)
     
     def _helpText(self):
-        with open('helptext.txt','r') as f:
+        filePath = os.path.abspath(__file__)
+        fileDirectory = '/'.join(filePath.split('/')[:-1])
+        with open(f'{fileDirectory}/helptext.txt','r') as f:
             lines = f.readlines()
         return lines
 
