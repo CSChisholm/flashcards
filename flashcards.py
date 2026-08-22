@@ -132,9 +132,10 @@ class mainWindow(QMainWindow):
         refresh = False
         if fileName is None:
             fileName = QFileDialog.getOpenFileName(self,'',self.currentDirectory)[0]
-            refresh = True
-            if not fileName=='':
-                self.currentDirectory = fileName[:-len(fileName.split('/')[-1])]
+            if len(fileName):
+                refresh = True
+                if not fileName=='':
+                    self.currentDirectory = fileName[:-len(fileName.split('/')[-1])]
         try:
             self._loadFile(fileName)
         except:
@@ -151,11 +152,13 @@ class mainWindow(QMainWindow):
                 self.setsList.setCurrentRow(itr)
     
     def _openDirectory(self):
-        self.currentDirectory = QFileDialog.getExistingDirectory(self,'',self.currentDirectory)
-        files = glob.glob(f'{self.currentDirectory}/**/*.flashcard',recursive=True)
-        for fileName in files:
-            self._openSet(fileName)
-        self._displaySets()
+        dirPath = QFileDialog.getExistingDirectory(self,'',self.currentDirectory)
+        if len(dirPath):
+            self.currentDirectory = dirPath
+            files = glob.glob(f'{self.currentDirectory}/**/*.flashcard',recursive=True)
+            for fileName in files:
+                self._openSet(fileName)
+            self._displaySets()
     
     def _file2key(self, fileName: str) -> str:
         '''Returns a unique key form a file name'''
@@ -366,7 +369,8 @@ class setBuilder(QWidget):
     
     def _fileDialog(self):
         fileName = QFileDialog.getSaveFileName(self,'',self.parent.currentDirectory)[0]
-        self._newSet(fileName)
+        if len(fileName):
+            self._newSet(fileName)
     
     def _newSet(self, fileName: str):
         if not os.path.exists(fileName):
